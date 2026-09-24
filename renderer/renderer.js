@@ -18,6 +18,38 @@ function instanceDirFor(mcVersion) {
     return `./instances/${mcVersion}`;
 }
 
+// ---------- LISTA WERSJI MINECRAFTA ----------
+
+let versionData = null;
+
+async function loadVersions(preferredValue) {
+    const select = $('mcVersion');
+    if (!versionData) {
+        versionData = await ipcRenderer.invoke('versions:list');
+    }
+
+    const showSnapshots = $('showSnapshots').checked;
+    const list = showSnapshots ? [...versionData.releases, ...versionData.snapshots] : versionData.releases;
+
+    const toSelect = preferredValue || select.value || versionData.latestRelease;
+
+    select.innerHTML = '';
+    list.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        select.appendChild(opt);
+    });
+
+    if (list.includes(toSelect)) {
+        select.value = toSelect;
+    } else if (list.length) {
+        select.value = list[0];
+    }
+}
+
+$('showSnapshots').addEventListener('change', () => loadVersions());
+
 // ---------- MOTYW ----------
 
 async function applyTheme(color) {
@@ -210,9 +242,13 @@ ipcRenderer.on('log:line', (e, line) => log(line));
     }
 
     const instances = await ipcRenderer.invoke('instances:get');
-    if (instances.length) {
-        const last = instances[instances.length - 1];
-        $('mcVersion').value = last.mcVersion;
+    const last = instances.length ? instances[instances.length - 1] : null;
+
+    log('Pobieranie listy wersji Minecrafta...');
+    await loadVersions(last ? last.mcVersion : null);
+    log('Lista wersji zaladowana.');
+
+    if (last) {
         $('loaderSelect').value = last.loader;
         state.instanceDir = instanceDirFor(last.mcVersion);
         state.versionCustom = last.versionCustom || null;

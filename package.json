@@ -10,7 +10,7 @@
   "dependencies": {
     "adm-zip": "^0.5.10",
     "minecraft-launcher-core": "^3.18.1",
-    "msmc": "^5.0.5",
+    "msmc": "^4.1.1",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {

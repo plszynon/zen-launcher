@@ -5,6 +5,8 @@ plikow co w ZenStar (main.js + renderer/ + build/icon.ico + portable .exe
 przez GitHub Actions).
 
 ## Funkcje
+- **Wybor wersji Minecrafta z listy** (pobieranej na zywo z Mojanga), z opcja pokazania snapshotow
+- Wlasne logo (enso / zen circle)
 - Logowanie **wylacznie przez prawdziwe konto Microsoft** (OAuth, msmc)
 - Wyszukiwarka i instalator modow z **Modrinth**
 - Jednoklikowa instalacja **Fabric** / **Forge**

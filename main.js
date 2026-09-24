@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 const dataDir = app.getPath('userData');
 const settingsFile = path.join(dataDir, 'settings.json');
@@ -62,6 +63,35 @@ ipcMain.handle('settings:get', () => readJson(settingsFile, { themeColor: '#8E24
 ipcMain.handle('settings:set', (e, settings) => {
     writeJson(settingsFile, settings);
     return settings;
+});
+
+// ---------- LISTA WERSJI MINECRAFTA (Mojang) ----------
+// Pobiera oficjalna liste wersji, zeby uzytkownik wybieral z rozwijanej listy
+// zamiast wpisywac wersje recznie.
+
+let versionCache = null;
+
+ipcMain.handle('versions:list', async () => {
+    if (versionCache) return versionCache;
+    try {
+        const res = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
+        const data = await res.json();
+        versionCache = {
+            latestRelease: data.latest.release,
+            latestSnapshot: data.latest.snapshot,
+            releases: data.versions.filter(v => v.type === 'release').map(v => v.id),
+            snapshots: data.versions.filter(v => v.type === 'snapshot').map(v => v.id)
+        };
+        return versionCache;
+    } catch (e) {
+        // fallback gdyby nie bylo internetu - kilka znanych stabilnych wersji
+        return {
+            latestRelease: '1.21.1',
+            latestSnapshot: null,
+            releases: ['1.21.1', '1.21', '1.20.6', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.17.1', '1.16.5'],
+            snapshots: []
+        };
+    }
 });
 
 // ---------- INSTANCJE (wersja MC + loader zapamietane miedzy uruchomieniami) ----------

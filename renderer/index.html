@@ -204,7 +204,13 @@
         <div class="card">
             <h2>Instancja</h2>
             <label>Wersja Minecraft
-                <input id="mcVersion" value="1.20.4" />
+                <select id="mcVersion">
+                    <option value="">Ladowanie wersji...</option>
+                </select>
+            </label>
+            <label>
+                <input type="checkbox" id="showSnapshots" style="width:auto; vertical-align:middle; margin-right:6px;" />
+                Pokaz snapshoty
             </label>
             <label>Loader
                 <select id="loaderSelect">
