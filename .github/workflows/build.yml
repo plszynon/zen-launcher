@@ -1,0 +1,29 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ustaw Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Zainstaluj zaleznosci
+        run: npm install
+
+      - name: Zbuduj plik EXE
+        run: npm run dist
+
+      - name: Wgraj EXE jako artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: zen-launcher-windows
+          path: dist/*.exe

@@ -1,0 +1,127 @@
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const path = require('path');
+const fs = require('fs');
+
+const dataDir = app.getPath('userData');
+const settingsFile = path.join(dataDir, 'settings.json');
+const instancesFile = path.join(dataDir, 'instances.json');
+const accountFile = path.join(dataDir, 'account.json');
+
+const { loginWithMicrosoft, restoreSession } = require('./src/auth');
+const { searchMods, downloadMod, updateInstalledMods } = require('./src/mods');
+const { installFabric, installForge, installIrisSodium } = require('./src/loaders');
+const { launchGame } = require('./src/launcher');
+
+function readJson(file, fallback) {
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf-8'));
+    } catch (e) {
+        return fallback;
+    }
+}
+
+function writeJson(file, data) {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+let mainWindow;
+
+function createWindow() {
+    mainWindow = new BrowserWindow({
+        width: 1150,
+        height: 760,
+        icon: path.join(__dirname, 'build', 'icon.ico'),
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+    mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+}
+
+app.whenReady().then(() => {
+    createWindow();
+
+    app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+});
+
+function send(channel, payload) {
+    if (mainWindow) mainWindow.webContents.send(channel, payload);
+}
+
+// ---------- USTAWIENIA (kolor motywu itp.) ----------
+
+ipcMain.handle('settings:get', () => readJson(settingsFile, { themeColor: '#8E24AA' }));
+
+ipcMain.handle('settings:set', (e, settings) => {
+    writeJson(settingsFile, settings);
+    return settings;
+});
+
+// ---------- INSTANCJE (wersja MC + loader zapamietane miedzy uruchomieniami) ----------
+
+ipcMain.handle('instances:get', () => readJson(instancesFile, []));
+
+ipcMain.handle('instances:save', (e, instance) => {
+    const list = readJson(instancesFile, []);
+    const idx = list.findIndex(i => i.mcVersion === instance.mcVersion);
+    if (idx >= 0) list[idx] = instance; else list.push(instance);
+    writeJson(instancesFile, list);
+    return list;
+});
+
+// ---------- KONTO MICROSOFT ----------
+// Wylacznie prawdziwe, kupione konto Microsoft (OAuth przez msmc).
+// Brak trybu "cracked" / offline / alt-kont - to nie zostanie dodane.
+
+ipcMain.handle('auth:login', async () => {
+    const profile = await loginWithMicrosoft();
+    writeJson(accountFile, profile);
+    return profile;
+});
+
+ipcMain.handle('auth:restore', async () => {
+    const saved = readJson(accountFile, null);
+    if (!saved) return null;
+    try {
+        const fresh = await restoreSession(saved);
+        writeJson(accountFile, fresh);
+        return fresh;
+    } catch (e) {
+        return null;
+    }
+});
+
+ipcMain.handle('auth:logout', () => {
+    try { fs.unlinkSync(accountFile); } catch (e) {}
+    return true;
+});
+
+// ---------- MODY (Modrinth) ----------
+
+ipcMain.handle('mods:search', (e, query, mcVersion, loader) => searchMods(query, mcVersion, loader));
+
+ipcMain.handle('mods:install', (e, { projectId, mcVersion, loader, instanceDir }) =>
+    downloadMod(projectId, mcVersion, loader, instanceDir));
+
+// Sprawdza i pobiera nowsze wersje modow juz zainstalowanych w folderze mods/
+ipcMain.handle('mods:updateAll', (e, { mcVersion, loader, instanceDir }) =>
+    updateInstalledMods(mcVersion, loader, instanceDir, (line) => send('log:line', line)));
+
+// ---------- LOADERY (Fabric / Forge / Iris+Sodium) ----------
+
+ipcMain.handle('loader:fabric', (e, { mcVersion, instanceDir }) => installFabric(mcVersion, instanceDir));
+ipcMain.handle('loader:forge', (e, { mcVersion, instanceDir }) => installForge(mcVersion, instanceDir));
+ipcMain.handle('loader:iris', (e, { mcVersion, instanceDir }) => installIrisSodium(mcVersion, instanceDir));
+
+// ---------- URUCHOMIENIE GRY ----------
+
+ipcMain.handle('game:launch', (e, opts) => launchGame(opts, (line) => send('log:line', line)));
+
+ipcMain.handle('shell:openInstance', (e, dir) => shell.openPath(dir));

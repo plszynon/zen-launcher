@@ -1,0 +1,34 @@
+{
+  "name": "zen-launcher",
+  "version": "1.0.0",
+  "description": "Zen Launcher - wlasny launcher do Minecrafta",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "minecraft-launcher-core": "^3.18.1",
+    "msmc": "^4.1.1",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.example.zenlauncher.desktop",
+    "productName": "Zen Launcher",
+    "win": {
+      "target": ["portable"],
+      "icon": "build/icon.ico"
+    },
+    "files": [
+      "main.js",
+      "src/**/*",
+      "renderer/**/*",
+      "build/icon.ico"
+    ]
+  }
+}
