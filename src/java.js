@@ -7,13 +7,23 @@ const { execFile } = require('child_process');
 
 // Minecraft wymaga roznych wersji Javy w zaleznosci od wersji gry
 // (dokladnie tak jak w oficjalnym launcherze Mojanga):
-//   1.20.5+          -> Java 21
-//   1.18   - 1.20.4  -> Java 17
-//   1.17.x           -> Java 16
-//   <= 1.16.5        -> Java 8
+//
+// Od 2026 roku Mojang zmienil numeracje wersji z "1.x.y" na "YY.D.H"
+// (rok.drop.hotfix, np. 26.1, 26.2, 26.3...) - te wersje wymagaja Javy 25.
+// Stare wersje "1.x.y" trzymaja sie starego schematu ponizej.
+//   26.x (nowy schemat, od 2026)  -> Java 25
+//   1.20.5 - 1.21.x               -> Java 21
+//   1.18   - 1.20.4               -> Java 17
+//   1.17.x                        -> Java 16
+//   <= 1.16.5                     -> Java 8
 function requiredJavaMajor(mcVersion) {
     const parts = mcVersion.split('.').map(n => parseInt(n, 10) || 0);
-    const [, minor = 0, patch = 0] = parts;
+    const [major, minor = 0, patch = 0] = parts;
+
+    if (major !== 1) {
+        // nowy schemat rok.drop.hotfix (26.1, 26.2, 26.3, 27.1, ...)
+        return 25;
+    }
 
     if (minor > 20 || (minor === 20 && patch >= 5)) return 21;
     if (minor >= 18 && minor <= 20) return 17;

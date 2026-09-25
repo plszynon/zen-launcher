@@ -102,11 +102,11 @@ ipcMain.handle('versions:list', async () => {
         };
         return versionCache;
     } catch (e) {
-        // fallback gdyby nie bylo internetu - kilka znanych stabilnych wersji
+        // fallback gdyby nie bylo internetu - mix nowych i starych wersji
         return {
-            latestRelease: '1.21.1',
+            latestRelease: '26.3',
             latestSnapshot: null,
-            releases: ['1.21.1', '1.21', '1.20.6', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.17.1', '1.16.5'],
+            releases: ['26.3', '26.2', '26.1', '1.21.11', '1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.16.5'],
             snapshots: []
         };
     }
