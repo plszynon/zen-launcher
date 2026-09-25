@@ -1,3 +1,8 @@
+// Naprawia blad "EMFILE: too many open files" na Windows, ktory pojawia sie
+// przy pobieraniu tysiecy malych plikow assetow Minecrafta naraz. Musi byc
+// zaladowane jako pierwsze, zanim jakikolwiek inny kod uzyje modulu 'fs'.
+require('graceful-fs').gracefulify(require('fs'));
+
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -24,7 +29,7 @@ function instanceDirFor(mcVersion) {
 const { loginWithMicrosoft, restoreSession } = require('./src/auth');
 const { searchMods, downloadMod, updateInstalledMods } = require('./src/mods');
 const { installFabric, installForge, installIrisSodium } = require('./src/loaders');
-const { launchGame } = require('./src/launcher');
+const { launchGame, stopGame } = require('./src/launcher');
 
 function readJson(file, fallback) {
     try {
@@ -174,5 +179,7 @@ ipcMain.handle('loader:iris', (e, { mcVersion, instanceDir }) => installIrisSodi
 // ---------- URUCHOMIENIE GRY ----------
 
 ipcMain.handle('game:launch', (e, opts) => launchGame(opts, (line) => send('log:line', line)));
+
+ipcMain.handle('game:stop', () => stopGame());
 
 ipcMain.handle('shell:openInstance', (e, dir) => shell.openPath(dir));

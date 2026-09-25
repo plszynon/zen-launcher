@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
+    "graceful-fs": "^4.2.11",
     "minecraft-launcher-core": "^3.18.1",
     "msmc": "^5.0.5",
     "node-fetch": "^2.7.0"

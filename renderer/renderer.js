@@ -164,6 +164,8 @@ $('launchBtn').addEventListener('click', async () => {
     const instanceDir = state.instanceDir || await instanceDirFor(mcVersion);
     try {
         log('Uruchamianie gry...');
+        $('launchBtn').style.display = 'none';
+        $('stopBtn').style.display = 'inline-block';
         await ipcRenderer.invoke('game:launch', {
             authProfile: state.authProfile ? state.authProfile.profile : null,
             instanceDir,
@@ -172,7 +174,20 @@ $('launchBtn').addEventListener('click', async () => {
         });
     } catch (e) {
         log('Blad uruchamiania: ' + e.message);
+        $('launchBtn').style.display = 'inline-block';
+        $('stopBtn').style.display = 'none';
     }
+});
+
+$('stopBtn').addEventListener('click', async () => {
+    try {
+        await ipcRenderer.invoke('game:stop');
+        log('Zatrzymano gre.');
+    } catch (e) {
+        log('Blad zatrzymywania: ' + e.message);
+    }
+    $('launchBtn').style.display = 'inline-block';
+    $('stopBtn').style.display = 'none';
 });
 
 // ---------- MODY ----------
@@ -230,7 +245,13 @@ $('modUpdateAllBtn').addEventListener('click', async () => {
 });
 
 // logi z procesu glownego (postep pobierania gry, aktualizacje modow)
-ipcRenderer.on('log:line', (e, line) => log(line));
+ipcRenderer.on('log:line', (e, line) => {
+    log(line);
+    if (line.includes('Gra zostala zamknieta')) {
+        $('launchBtn').style.display = 'inline-block';
+        $('stopBtn').style.display = 'none';
+    }
+});
 
 // przywrocenie sesji Microsoft i ostatniej instancji przy starcie
 (async () => {

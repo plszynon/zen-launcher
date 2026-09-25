@@ -2,6 +2,8 @@ const { Client } = require('minecraft-launcher-core');
 const path = require('path');
 const fs = require('fs');
 
+let currentProcess = null;
+
 // authProfile MUSI pochodzic z msmc (prawdziwe, zweryfikowane konto Microsoft).
 // Brak wsparcia dla logowania offline/cracked.
 async function launchGame(opts, onLog) {
@@ -38,6 +40,12 @@ async function launchGame(opts, onLog) {
             max: `${ramMaxGB}G`,
             min: `${ramMinGB}G`
         },
+        // Windows domyslnie ma niski limit rownoczesnie otwartych plikow, a
+        // pobieranie assetow Minecrafta to tysiace malych plikow naraz -
+        // ograniczamy rownolegle pobieranie, zeby uniknac bledu EMFILE.
+        overrides: {
+            maxSockets: 4
+        },
         javaPath: javaPath || undefined
     };
 
@@ -45,9 +53,28 @@ async function launchGame(opts, onLog) {
     launcher.on('data', (e) => onLog(String(e)));
     launcher.on('progress', (e) => onLog(`[postep] ${e.type}: ${e.task}/${e.total}`));
     launcher.on('error', (e) => onLog(`[blad] ${e}`));
+    launcher.on('close', (code) => {
+        onLog(`[info] Gra zostala zamknieta (kod ${code}).`);
+        currentProcess = null;
+    });
 
-    await launcher.launch(launchOpts);
+    const proc = await launcher.launch(launchOpts);
+    currentProcess = proc || null;
+
     return { started: true, instanceDir: path.resolve(instanceDir) };
 }
 
-module.exports = { launchGame };
+function stopGame() {
+    if (!currentProcess) {
+        throw new Error('Gra nie jest uruchomiona.');
+    }
+    currentProcess.kill();
+    currentProcess = null;
+    return { stopped: true };
+}
+
+function isRunning() {
+    return !!currentProcess;
+}
+
+module.exports = { launchGame, stopGame, isRunning };
