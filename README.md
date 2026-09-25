@@ -5,7 +5,8 @@ plikow co w ZenStar (main.js + renderer/ + build/icon.ico + portable .exe
 przez GitHub Actions).
 
 ## Funkcje
-- **Wybor wersji Minecrafta z listy** (pobieranej na zywo z Mojanga), z opcja pokazania snapshotow
+- **Naprawiona sciezka instancji w wersji portable** - folder gry trzyma sie zawsze obok pliku .exe (a nie w tymczasowym folderze Temp, gdzie wczesniej powodowalo to blad `ENOENT`)
+- **"Zapamietaj mnie"** przy logowaniu - checkbox decyduje czy dane logowania Microsoft zostana zapisane na dysku do nastepnego uruchomienia
 - Wlasne logo (enso / zen circle)
 - Logowanie **wylacznie przez prawdziwe konto Microsoft** (OAuth, msmc)
 - Wyszukiwarka i instalator modow z **Modrinth**

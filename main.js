@@ -8,6 +8,19 @@ const settingsFile = path.join(dataDir, 'settings.json');
 const instancesFile = path.join(dataDir, 'instances.json');
 const accountFile = path.join(dataDir, 'account.json');
 
+// W wersji portable Electron/electron-builder rozpakowuje aplikacje do
+// tymczasowego folderu w Temp - sciezki WZGLEDEM aplikacji (np. "./instances")
+// laduja wiec w Temp i znikaja / czasem nie da sie tam nawet zapisac.
+// Dlatego instancje trzymamy zawsze w stalym, przewidywalnym miejscu:
+// - PORTABLE_EXECUTABLE_DIR (ustawiane automatycznie przez electron-builder
+//   dla buildu "portable" - to folder, w ktorym faktycznie lezy plik .exe)
+// - w trybie deweloperskim (npm start) po prostu folder projektu
+const instancesRoot = process.env.PORTABLE_EXECUTABLE_DIR || __dirname;
+
+function instanceDirFor(mcVersion) {
+    return path.join(instancesRoot, 'instances', mcVersion);
+}
+
 const { loginWithMicrosoft, restoreSession } = require('./src/auth');
 const { searchMods, downloadMod, updateInstalledMods } = require('./src/mods');
 const { installFabric, installForge, installIrisSodium } = require('./src/loaders');
@@ -94,6 +107,10 @@ ipcMain.handle('versions:list', async () => {
     }
 });
 
+// ---------- SCIEZKA INSTANCJI (zawsze stabilna, obok pliku .exe) ----------
+
+ipcMain.handle('paths:instanceDir', (e, mcVersion) => instanceDirFor(mcVersion));
+
 // ---------- INSTANCJE (wersja MC + loader zapamietane miedzy uruchomieniami) ----------
 
 ipcMain.handle('instances:get', () => readJson(instancesFile, []));
@@ -110,9 +127,13 @@ ipcMain.handle('instances:save', (e, instance) => {
 // Wylacznie prawdziwe, kupione konto Microsoft (OAuth przez msmc).
 // Brak trybu "cracked" / offline / alt-kont - to nie zostanie dodane.
 
-ipcMain.handle('auth:login', async () => {
+ipcMain.handle('auth:login', async (e, rememberMe) => {
     const profile = await loginWithMicrosoft();
-    writeJson(accountFile, profile);
+    if (rememberMe) {
+        writeJson(accountFile, profile);
+    } else {
+        try { fs.unlinkSync(accountFile); } catch (err) {}
+    }
     return profile;
 });
 

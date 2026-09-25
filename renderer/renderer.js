@@ -14,8 +14,8 @@ function log(line) {
     out.scrollTop = out.scrollHeight;
 }
 
-function instanceDirFor(mcVersion) {
-    return `./instances/${mcVersion}`;
+async function instanceDirFor(mcVersion) {
+    return ipcRenderer.invoke('paths:instanceDir', mcVersion);
 }
 
 // ---------- LISTA WERSJI MINECRAFTA ----------
@@ -78,9 +78,10 @@ document.addEventListener('click', (e) => {
     }
 });
 
-$('openInstanceBtn').addEventListener('click', () => {
+$('openInstanceBtn').addEventListener('click', async () => {
     const mcVersion = $('mcVersion').value.trim();
-    ipcRenderer.invoke('shell:openInstance', state.instanceDir || instanceDirFor(mcVersion));
+    const dir = state.instanceDir || await instanceDirFor(mcVersion);
+    ipcRenderer.invoke('shell:openInstance', dir);
 });
 
 // ---------- KONTO MICROSOFT ----------
@@ -100,8 +101,9 @@ function refreshAccountUI() {
 $('loginBtn').addEventListener('click', async () => {
     try {
         log('Logowanie przez Microsoft...');
-        state.authProfile = await ipcRenderer.invoke('auth:login');
-        log('Zalogowano jako ' + state.authProfile.profile.name);
+        const rememberMe = $('rememberMe').checked;
+        state.authProfile = await ipcRenderer.invoke('auth:login', rememberMe);
+        log('Zalogowano jako ' + state.authProfile.profile.name + (rememberMe ? ' (zapamietano)' : ''));
     } catch (e) {
         log('Blad logowania: ' + e.message);
     }
@@ -119,7 +121,7 @@ $('logoutBtn').addEventListener('click', async () => {
 $('installLoaderBtn').addEventListener('click', async () => {
     const mcVersion = $('mcVersion').value.trim();
     const loader = $('loaderSelect').value;
-    const instanceDir = instanceDirFor(mcVersion);
+    const instanceDir = await instanceDirFor(mcVersion);
     state.instanceDir = instanceDir;
 
     try {
@@ -145,7 +147,7 @@ $('installLoaderBtn').addEventListener('click', async () => {
 
 $('installIrisBtn').addEventListener('click', async () => {
     const mcVersion = $('mcVersion').value.trim();
-    const instanceDir = state.instanceDir || instanceDirFor(mcVersion);
+    const instanceDir = state.instanceDir || await instanceDirFor(mcVersion);
     try {
         log('Instalowanie Iris + Sodium (wymaga Fabric)...');
         await ipcRenderer.invoke('loader:iris', { mcVersion, instanceDir });
@@ -159,7 +161,7 @@ $('installIrisBtn').addEventListener('click', async () => {
 
 $('launchBtn').addEventListener('click', async () => {
     const mcVersion = $('mcVersion').value.trim();
-    const instanceDir = state.instanceDir || instanceDirFor(mcVersion);
+    const instanceDir = state.instanceDir || await instanceDirFor(mcVersion);
     try {
         log('Uruchamianie gry...');
         await ipcRenderer.invoke('game:launch', {
@@ -193,7 +195,7 @@ $('modSearchBtn').addEventListener('click', async () => {
             btn.className = 'btn';
             btn.textContent = 'Instaluj';
             btn.addEventListener('click', async () => {
-                const instanceDir = state.instanceDir || instanceDirFor(mcVersion);
+                const instanceDir = state.instanceDir || await instanceDirFor(mcVersion);
                 try {
                     await ipcRenderer.invoke('mods:install', {
                         projectId: mod.id, mcVersion, loader: loader || 'fabric', instanceDir
@@ -216,7 +218,7 @@ $('modUpdateAllBtn').addEventListener('click', async () => {
     const mcVersion = $('mcVersion').value.trim();
     const loaderRaw = $('loaderSelect').value;
     const loader = loaderRaw === 'vanilla' ? 'fabric' : loaderRaw;
-    const instanceDir = state.instanceDir || instanceDirFor(mcVersion);
+    const instanceDir = state.instanceDir || await instanceDirFor(mcVersion);
 
     try {
         log('Sprawdzanie aktualizacji modow...');
@@ -250,7 +252,7 @@ ipcRenderer.on('log:line', (e, line) => log(line));
 
     if (last) {
         $('loaderSelect').value = last.loader;
-        state.instanceDir = instanceDirFor(last.mcVersion);
+        state.instanceDir = await instanceDirFor(last.mcVersion);
         state.versionCustom = last.versionCustom || null;
     }
 })();

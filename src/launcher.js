@@ -1,5 +1,6 @@
 const { Client } = require('minecraft-launcher-core');
 const path = require('path');
+const fs = require('fs');
 
 // authProfile MUSI pochodzic z msmc (prawdziwe, zweryfikowane konto Microsoft).
 // Brak wsparcia dla logowania offline/cracked.
@@ -17,6 +18,11 @@ async function launchGame(opts, onLog) {
     if (!authProfile) {
         throw new Error('Musisz zalogowac sie przez Microsoft przed uruchomieniem gry.');
     }
+
+    // Zabezpieczenie: upewnij sie, ze folder instancji istnieje (rekurencyjnie),
+    // zanim MCLC sprobuje w nim cokolwiek utworzyc.
+    fs.mkdirSync(instanceDir, { recursive: true });
+    fs.mkdirSync(path.join(instanceDir, 'mods'), { recursive: true });
 
     const launcher = new Client();
 
