@@ -7,6 +7,9 @@ przez GitHub Actions).
 ## Funkcje
 - **Naprawiona sciezka instancji w wersji portable** - folder gry trzyma sie zawsze obok pliku .exe (a nie w tymczasowym folderze Temp, gdzie wczesniej powodowalo to blad `ENOENT`)
 - **"Zapamietaj mnie"** przy logowaniu - checkbox decyduje czy dane logowania Microsoft zostana zapisane na dysku do nastepnego uruchomienia
+- **Naprawiony blad EMFILE** przy pobieraniu duzej liczby plikow na Windows (`graceful-fs` + ograniczenie rownoleglych pobieran)
+- **Przycisk ZATRZYMAJ** - pojawia sie po wcisnieciu GRAJ, zabija proces gry
+- **Automatyczny dobor i pobieranie wlasciwej Javy** pod wersje Minecrafta (jak w oficjalnym launcherze) - jesli systemowa Java jest za stara/za nowa dla wybranej wersji gry, launcher sam pobiera pasujaca, przenosna wersje (Adoptium/Eclipse Temurin) do folderu `runtimes/` i nie dotyka Javy zainstalowanej w systemie
 - Wlasne logo (enso / zen circle)
 - Logowanie **wylacznie przez prawdziwe konto Microsoft** (OAuth, msmc)
 - Wyszukiwarka i instalator modow z **Modrinth**

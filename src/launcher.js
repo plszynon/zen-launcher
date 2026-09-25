@@ -1,6 +1,7 @@
 const { Client } = require('minecraft-launcher-core');
 const path = require('path');
 const fs = require('fs');
+const { ensureJava } = require('./java');
 
 let currentProcess = null;
 
@@ -26,6 +27,11 @@ async function launchGame(opts, onLog) {
     fs.mkdirSync(instanceDir, { recursive: true });
     fs.mkdirSync(path.join(instanceDir, 'mods'), { recursive: true });
 
+    // Automatyczny dobor Javy pod wersje Minecrafta (tak jak oficjalny launcher).
+    // Jesli podano wlasny javaPath w opcjach, ma pierwszenstwo.
+    const runtimesRoot = path.resolve(instanceDir, '..', '..', 'runtimes');
+    const autoJavaPath = javaPath || await ensureJava(mcVersion, runtimesRoot, onLog);
+
     const launcher = new Client();
 
     const launchOpts = {
@@ -46,7 +52,7 @@ async function launchGame(opts, onLog) {
         overrides: {
             maxSockets: 4
         },
-        javaPath: javaPath || undefined
+        javaPath: autoJavaPath || undefined
     };
 
     launcher.on('debug', (e) => onLog(`[debug] ${e}`));
